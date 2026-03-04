@@ -1,7 +1,3 @@
-# Raw data files (large, not version-controlled)
-*.csv
-AS7058/
-SP-20/
 
 # Output image folders
 output/
