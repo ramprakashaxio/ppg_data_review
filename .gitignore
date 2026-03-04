@@ -1,4 +1,7 @@
 
+# Backup folder
+backup/
+
 # Output image folders (root-level only, not subfolders)
 output_quality/
 output_sq/
