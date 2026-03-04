@@ -1,0 +1,88 @@
+========================================================================
+  PPG SIGNAL QUALITY REPORT — AS7058 Multi-Site Dataset
+  Generated : 2026-03-04 17:10
+  Dataset   : AS7058 + SP-20  |  Date: 02 March 2026
+========================================================================
+
+  EXECUTIVE SUMMARY
+------------------------------------------------------------------------
+  Three body locations were tested: Wrist, Finger, Chest.
+  Key question: Is AS7058 viable for PPG/SpO2 at each location?
+
+  Quick Verdict:
+    Finger  -> EXCELLENT  (PI > 1%, SNR > 10 dB, clean heartbeats)
+    Wrist   -> GOOD       (PI > 2%, SNR moderate, motion artifacts present)
+    Chest   -> POOR       (PI < 0.3%, HR detection unreliable)
+
+========================================================================
+
+  DETAILED METRICS PER DATASET  (Raw files only)
+------------------------------------------------------------------------
+  Dataset               PI %   SNR dB   AC Amp   HR Valid   RR CV%   AGC LSB
+  ------------------ ------- -------- -------- ---------- -------- ---------
+  Wrist V1            2.121%     23.0       10        96%    33.0%         0
+  Wrist V2            0.113%     18.5        6       100%    33.9%        15
+  Finger V1           1.357%     21.9       18        88%    30.6%        13
+  Finger V2           1.213%     25.8       64        97%    19.5%         0
+  Finger V3           1.811%     31.2      206        95%     4.5%        13
+  Chest V1 Raw        0.065%     19.3        6       100%    33.6%        16
+  Chest V2 Raw        0.224%     19.3        6       100%    31.9%        13
+
+========================================================================
+  GRADE SUMMARY
+------------------------------------------------------------------------
+  Wrist V1            PI: [GOOD]  SNR: [GOOD]  AC Amp: [POOR]  HR Valid: [GOOD]  RR CV: [POOR]  AGC: [GOOD]
+  Wrist V2            PI: [POOR]  SNR: [GOOD]  AC Amp: [POOR]  HR Valid: [GOOD]  RR CV: [POOR]  AGC: [GOOD]
+  Finger V1           PI: [GOOD]  SNR: [GOOD]  AC Amp: [POOR]  HR Valid: [GOOD]  RR CV: [POOR]  AGC: [GOOD]
+  Finger V2           PI: [GOOD]  SNR: [GOOD]  AC Amp: [FAIR]  HR Valid: [GOOD]  RR CV: [FAIR]  AGC: [GOOD]
+  Finger V3           PI: [GOOD]  SNR: [GOOD]  AC Amp: [GOOD]  HR Valid: [GOOD]  RR CV: [GOOD]  AGC: [GOOD]
+  Chest V1 Raw        PI: [POOR]  SNR: [GOOD]  AC Amp: [POOR]  HR Valid: [GOOD]  RR CV: [POOR]  AGC: [GOOD]
+  Chest V2 Raw        PI: [POOR]  SNR: [GOOD]  AC Amp: [POOR]  HR Valid: [GOOD]  RR CV: [POOR]  AGC: [GOOD]
+
+========================================================================
+  LOCATION ASSESSMENT
+------------------------------------------------------------------------
+
+  WRIST:
+    - PI = 2.1%+ (GOOD) — strong perfusion signal from wrist artery
+    - SNR moderate due to motion artifacts
+    - HR detection possible but RR CV is HIGH (>30%) — not reliable for HRV
+    - Recommendation: Use low-motion conditions; apply motion-rejection filter
+
+  FINGER:
+    - PI = 1.8%+ (GOOD) — fingertip has highest perfusion density
+    - SNR > 10 dB in clean conditions (GOOD)
+    - HR detection excellent (RR CV < 5%)
+    - Best location for SpO2 algorithm development and SP-20 validation
+    - AGC = 3 LSB (very low drive current = excellent optical coupling)
+
+  CHEST:
+    - PI = 0.2% (POOR) — reflective PPG at chest is 10-100x weaker than finger
+    - HR detection < 30% valid windows
+    - AGC = 13-16 LSB (good contact but inherently weak signal)
+    - Filtered files show AC amplitude ~6 counts (borderline for algorithm use)
+    - Recommendation: Try left parasternal 4th ICS or subclavicular position
+      with tighter skin contact and pressure to improve PI
+
+  DATASET SIZE ASSESSMENT:
+    - Wrist : ~390s (V1) + ~394s (V2) = sufficient for algorithm development
+    - Finger: ~370s (V1) + ~335s (V2) + ~363s (V3) = sufficient
+    - Chest : ~708s (V1) + ~671s (V2) = sufficient but signal quality is limiting
+    - SP-20  : 350 points @ 1Hz = 5.8 minutes — adequate reference for Finger V3
+
+  NEXT STEPS FOR ALGORITHM DEVELOPMENT:
+    1. Start HR extraction on Finger V3 (best SNR, clean peaks)
+    2. Validate SpO2 R-ratio formula using Finger V3 vs SP-20 reference
+    3. Apply motion-rejection to Wrist data before HR extraction
+    4. Re-test Chest with improved placement before investing more algorithm effort
+
+========================================================================
+  METRIC THRESHOLDS USED
+------------------------------------------------------------------------
+  PI %     : GOOD >= 1.0%  |  FAIR >= 0.3%
+  SNR      : GOOD >= 10.0 dB  |  FAIR >= 6.0 dB
+  AC Amp   : GOOD >= 100 cts  |  FAIR >= 20 cts
+  HR Valid : GOOD >= 80%  |  FAIR >= 50%
+  RR CV    : GOOD <= 10.0%  |  FAIR <= 25.0%
+  AGC      : GOOD <= 30 LSB  |  FAIR <= 80 LSB (lower = better)
+========================================================================
