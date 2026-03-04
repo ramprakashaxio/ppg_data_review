@@ -53,6 +53,9 @@ THR = dict(
 
 GROUP_COLOR = {'Wrist': '#1f77b4', 'Finger': '#2ca02c', 'Chest': '#d62728'}
 
+# How many seconds from the END of each recording to use for stable summaries
+TAIL_S = 120.0   # last 2 minutes = post-settling, steady-state signal
+
 # ── Data loading ───────────────────────────────────────────────────────────────
 def load_dataset(label, group, subpath):
     fpath = os.path.join(BASE, subpath)
@@ -229,14 +232,23 @@ def compute_metrics(ds, win=10.0, step=2.0):
 
 # ── Summary per dataset ────────────────────────────────────────────────────────
 def summarise(ds, mets):
-    hrs = mets['hrs']
+    # Use only the last TAIL_S seconds of sliding windows for stable metrics
+    wt = mets['win_t']
+    tail = (wt >= wt[-1] - TAIL_S) if len(wt) > 0 else np.ones(len(wt), bool)
+
+    hrs     = mets['hrs'][tail]
+    pis_t   = mets['pis'][tail]
+    snrs_t  = mets['snrs'][tail]
+    amps_t  = mets['amps'][tail]
+    rrcvs_t = mets['rrcvs'][tail]
+
     valid_hr = (hrs > THR['hr_lo']) & (hrs < THR['hr_hi'])
-    pi_m    = float(np.nanmedian(mets['pis']))   if ds['ftype'] == 'raw' else np.nan
-    snr_m   = float(np.nanmedian(mets['snrs']))
-    amp_m   = float(np.nanmedian(mets['amps']))
-    hr_pct  = float(valid_hr.mean() * 100)       if len(hrs) > 0 else np.nan
-    rrcv_m  = float(np.nanmedian(mets['rrcvs'][valid_hr])) if valid_hr.any() else np.nan
-    agc_m   = float(ds['agc'])                   if not np.isnan(ds['agc']) else np.nan
+    pi_m    = float(np.nanmedian(pis_t))          if ds['ftype'] == 'raw' else np.nan
+    snr_m   = float(np.nanmedian(snrs_t))
+    amp_m   = float(np.nanmedian(amps_t))
+    hr_pct  = float(valid_hr.mean() * 100)        if len(hrs) > 0 else np.nan
+    rrcv_m  = float(np.nanmedian(rrcvs_t[valid_hr])) if valid_hr.any() else np.nan
+    agc_m   = float(ds['agc'])                    if not np.isnan(ds['agc']) else np.nan
 
     def grade(val, g, f):
         if np.isnan(val): return 'N/A'
@@ -258,16 +270,16 @@ def summarise(ds, mets):
 
 # ── PLOT 1: Waveform Overview ──────────────────────────────────────────────────
 def plot_waveforms(all_ds):
-    SHOW_S = 40  # seconds to display
-    labels = [d['label'] for d in all_ds]
+    SHOW_S = 40  # seconds to display from the END of each recording
     n = len(all_ds)
     fig, axes = plt.subplots(n, 1, figsize=(20, 2.5 * n), sharex=False)
-    fig.suptitle('PPG Waveform Overview — All Datasets (first 40s, IR channel normalized)',
+    fig.suptitle('PPG Waveform Overview — All Datasets (LAST 40s, IR channel normalized)',
                  fontsize=14, fontweight='bold', y=1.0)
 
     for ax, ds in zip(axes, all_ds):
         t, ir = ds['t'], ds['ir']
-        m = t <= SHOW_S
+        t_start = max(0.0, ds['duration'] - SHOW_S)
+        m = t >= t_start
         t_s, ir_s = t[m], ir[m]
         if len(ir_s) == 0:
             ax.text(0.5, 0.5, 'No data', ha='center', va='center', transform=ax.transAxes)
@@ -275,10 +287,10 @@ def plot_waveforms(all_ds):
         ir_n = (ir_s - np.nanmin(ir_s)) / (np.nanmax(ir_s) - np.nanmin(ir_s) + 1e-9)
         color = GROUP_COLOR[ds['group']]
         ax.plot(t_s, ir_n, lw=0.6, color=color, alpha=0.85)
-        ax.set_xlim(0, SHOW_S)
+        ax.set_xlim(t_start, ds['duration'])
         ax.set_ylim(-0.05, 1.1)
         ax.set_ylabel('Norm. IR', fontsize=8)
-        tag = f"{ds['label']}   [{ds['ftype'].upper()}, {ds['fs']}Hz, {ds['duration']:.0f}s]"
+        tag = f"{ds['label']}   [{ds['ftype'].upper()}, {ds['fs']}Hz, total {ds['duration']:.0f}s — showing last {SHOW_S:.0f}s]"
         ax.set_title(tag, loc='left', fontsize=9, color=color, fontweight='bold')
         ax.tick_params(labelsize=7)
         ax.grid(True, alpha=0.25)
@@ -399,8 +411,8 @@ def plot_psd(all_ds):
         color = GROUP_COLOR[grp]
         for i, ds in enumerate(dslist):
             t, ir, fs = ds['t'], ds['ir'], ds['fs']
-            m  = t > 10
-            seg = ir[m][:fs * 60]  # use up to 60s after settling
+            m  = t >= (t[-1] - 60.0)   # last 60s of recording
+            seg = ir[m]
             seg = np.clip(seg, np.percentile(seg, 1), np.percentile(seg, 99))
             ac  = bandpass(seg - np.mean(seg), fs)
             f, p = sp.welch(ac, fs=fs, nperseg=min(len(ac), fs * 8))
@@ -561,14 +573,14 @@ def plot_best_waveforms(all_ds, all_mets):
     n = len(groups_present)
 
     fig, axes = plt.subplots(n, 1, figsize=(20, 4 * n))
-    fig.suptitle('Best PPG Waveform per Body Location — Raw & Bandpass Filtered (5-15s window)',
+    fig.suptitle('Best PPG Waveform per Body Location — Raw & Bandpass Filtered (last 15s)',
                  fontsize=13, fontweight='bold')
 
     for ax, grp in zip(np.atleast_1d(axes), groups_present):
         ds, _ = best[grp]
         t, ir, fs = ds['t'], ds['ir'], ds['fs']
-        # Use 5–15s window (post AGC settling)
-        m = (t >= 5) & (t < 20)
+        # Use last 15s of the recording (stable, post-settling)
+        m = t >= (ds['duration'] - 15.0)
         t_seg, ir_seg = t[m], ir[m]
         ir_clip = np.clip(ir_seg, np.percentile(ir_seg, 1), np.percentile(ir_seg, 99))
         ir_ac   = bandpass(ir_clip - np.mean(ir_clip), fs)
