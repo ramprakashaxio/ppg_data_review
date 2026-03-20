@@ -1,0 +1,91 @@
+# Position C Chest PPG Quality Report - Iteration 2
+
+**Sensor:** AS7058 | **Sampling:** 200 Hz | **Date:** 04 March 2026
+
+## Verdict: **USABLE**
+
+Position C meets minimum signal quality requirements.
+**Best channel:** HRM CH1
+
+---
+## Comparison with Iteration 1 Chest
+
+| Metric | Iteration 1 | Position C (HRM CH1) | Change |
+|--------|-------------|------------------------|--------|
+| PI % | 0.220% | 0.423% | +0.203% (IMPROVED, +92.3%) |
+| SNR (dB) | 19.1 | 41.7 | +22.6 |
+| AC Amp (cts) | 6 | 2394 | +2388 |
+
+---
+## Computed Metrics (median of last 120s)
+
+| Metric | SpO2 RED | SpO2 SUB3 | HRM CH1 | SpO2F_PPG1_SUB1 | SpO2F_PPG1_SUB2 | SpO2F_PPG1_SUB3 | HRMF_PPG1_SUB1 | HRMF_PPG1_SUB2 | Iter1 Chest |
+|--------|--------|--------|--------|--------|--------|--------|--------|--------|-------------|
+| PI % | 0.0468 | 0.0914 | 0.4231 | N/A | N/A | N/A | N/A | N/A | 0.2200 |
+| SNR (dB) | 27.4 | 30.5 | 41.7 | 18.9 | 28.5 | 31.6 | 42.6 | 19.7 | 19.1 |
+| AC Amp (cts) | 303.9 | 437.3 | 2393.8 | 4.7 | 286.4 | 420.5 | 2371.5 | 5.4 | 6.0 |
+| HR (bpm) | 92.3 | 105.0 | 102.8 | 94.6 | 94.1 | 105.3 | 102.8 | 86.7 | N/A |
+| HR Valid % | 100.0 | 91.8 | 100.0 | 100.0 | 100.0 | 100.0 | 100.0 | 100.0 | 100.0 |
+| RR CV % | 30.7 | 4.1 | 2.9 | 32.4 | 28.5 | 3.7 | 2.8 | 31.4 | 3.6 |
+
+---
+## Quality Grades
+
+| Metric | SpO2 RED | SpO2 SUB3 | HRM CH1 | SpO2F_PPG1_SUB1 | SpO2F_PPG1_SUB2 | SpO2F_PPG1_SUB3 | HRMF_PPG1_SUB1 | HRMF_PPG1_SUB2 |
+|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+| PI | POOR | POOR | FAIR | N/A | N/A | N/A | N/A | N/A |
+| SNR | GOOD | GOOD | GOOD | GOOD | GOOD | GOOD | GOOD | GOOD |
+| AC Amp | GOOD | GOOD | GOOD | POOR | GOOD | GOOD | GOOD | POOR |
+| HR Valid | GOOD | GOOD | GOOD | GOOD | GOOD | GOOD | GOOD | GOOD |
+| RR CV | POOR | GOOD | GOOD | POOR | POOR | GOOD | GOOD | POOR |
+
+---
+## Sensor-Reported Metrics (AS7058 on-chip algorithm)
+
+### SpO2 Mode
+
+- **PI:** median=0.0500%, range=0.0000-0.0800%
+- **Signal Quality:** median=20, range=0-40
+- **HR:** median=104.3 bpm, range=48.9-150.0 bpm
+- **SpO2 %:** median=98.8%, range=97.7-100.0%
+
+### HRM Mode
+
+- **Signal Quality:** median=51, range=24-93
+- **HR:** median=102.1 bpm, range=89.5-117.5 bpm
+- **Respiration Rate:** median=17.7 bpm, confidence median=90
+
+---
+## AGC (Automatic Gain Control) Analysis
+
+| Mode | Channel | LED Current (LSB) | Grade |
+|------|---------|-------------------|-------|
+| SpO2 | AGC1_led | 160 | POOR |
+| SpO2 | AGC2_led | 120 | POOR |
+| HRM | AGC1_led | 30 | GOOD |
+
+---
+## Signal vs Noise Breakdown
+
+### Signal (what we want)
+- **Cardiac pulsation:** blood volume changes with each heartbeat
+- **Frequency range:** 0.7 - 3.5 Hz (42 - 210 bpm)
+- Appears as periodic waveform in bandpass-filtered PPG
+
+### Noise (what degrades measurement)
+- **High-frequency noise (>4 Hz):** electronic/optical noise
+- **Baseline drift (<0.5 Hz):** sensor movement, temperature
+- **Motion artifacts:** body/sensor movement during measurement
+- **Low perfusion:** insufficient blood flow at measurement site
+
+### At this chest position
+- PI = 0.4231% is **within acceptable range**
+- SNR = 41.7 dB: cardiac power is **much stronger** than noise floor
+
+---
+## Conclusion
+
+Position C meets minimum signal quality thresholds. Heart rate detection is feasible. SpO2 may be possible with algorithm optimization.
+
+---
+*Report generated: 20 March 2026, 02:41 PM*
